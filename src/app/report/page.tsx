@@ -14,6 +14,7 @@ import {
   CheckCircle,
 } from 'lucide-react';
 import { clsx } from 'clsx';
+import { BACKEND_URL } from '../../lib/config';
 import { DISASTER_CONFIGS, getDisasterConfig } from '../../lib/constants/disaster-types';
 import { DisasterType, SeverityLevel } from '../../lib/types/incidents';
 
@@ -68,7 +69,7 @@ export default function ReportPage() {
         userId: 'citizen_' + Math.floor(Math.random() * 10000) // Mock user ID for now
       };
 
-      const res = await fetch('http://localhost:3001/api/reports', {
+      const res = await fetch(`${BACKEND_URL}/api/reports`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)

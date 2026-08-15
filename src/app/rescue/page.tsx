@@ -21,6 +21,7 @@ import {
   ChevronUp,
 } from 'lucide-react';
 import { clsx } from 'clsx';
+import { BACKEND_URL } from '../../lib/config';
 import { Incident } from '../../lib/types/incidents';
 
 const DisasterMap = dynamic(() => import('../../components/map/DisasterMap'), {
@@ -85,7 +86,7 @@ export default function RescuePage() {
   const [expandedRoute, setExpandedRoute] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch('http://localhost:3001/api/incidents')
+    fetch(`${BACKEND_URL}/api/incidents`)
       .then(res => res.json())
       .then(data => {
         const active = data.filter((inc: any) => inc.status === 'active' || inc.status === 'monitoring');
@@ -110,7 +111,7 @@ export default function RescuePage() {
     if (!searchCenter) return;
 
     setIsLoading(true);
-    fetch(`http://localhost:3001/api/rescue/resources?lat=${searchCenter.lat}&lng=${searchCenter.lng}&radius=100000`)
+    fetch(`${BACKEND_URL}/api/rescue/resources?lat=${searchCenter.lat}&lng=${searchCenter.lng}&radius=100000`)
       .then(res => res.json())
       .then(data => {
         setResources(data);
@@ -125,7 +126,7 @@ export default function RescuePage() {
 
     setIsLoadingEvac(true);
     setEvacMessage(null);
-    fetch(`http://localhost:3001/api/rescue/evacuation-routes?lat=${searchCenter.lat}&lng=${searchCenter.lng}&radius=100000&topN=5`)
+    fetch(`${BACKEND_URL}/api/rescue/evacuation-routes?lat=${searchCenter.lat}&lng=${searchCenter.lng}&radius=100000&topN=5`)
       .then(res => res.json())
       .then(data => {
         setEvacRoutes(data.routes || []);

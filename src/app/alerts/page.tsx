@@ -16,6 +16,7 @@ import {
   ChevronDown,
 } from 'lucide-react';
 import { clsx } from 'clsx';
+import { BACKEND_URL } from '../../lib/config';
 import { Alert } from '../../lib/types/incidents';
 import { getDisasterConfig, DISASTER_CONFIGS } from '../../lib/constants/disaster-types';
 
@@ -29,7 +30,7 @@ export default function AlertsPage() {
 
   useEffect(() => {
     // Fetch real alerts
-    fetch('http://localhost:3001/api/alerts')
+    fetch(`${BACKEND_URL}/api/alerts`)
       .then(r => r.json())
       .then(data => {
         if (Array.isArray(data)) setAlerts(data);

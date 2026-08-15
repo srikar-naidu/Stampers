@@ -8,6 +8,7 @@
     "dev:backend": "nodemon --watch server --ext ts --exec tsx --env-file=.env.local server/index.ts",
     "build": "next build",
     "start": "next start",
+    "start:backend": "tsx server/index.ts",
     "lint": "eslint"
   },
   "dependencies": {
@@ -33,7 +34,8 @@
     "recharts": "^3.8.1",
     "socket.io": "^4.8.3",
     "socket.io-client": "^4.8.3",
-    "tailwind-merge": "^3.6.0"
+    "tailwind-merge": "^3.6.0",
+    "tsx": "^4.22.3"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
@@ -49,7 +51,6 @@
     "eslint-config-next": "16.2.6",
     "nodemon": "^3.1.14",
     "tailwindcss": "^4",
-    "tsx": "^4.22.3",
     "typescript": "^5"
   }
 }

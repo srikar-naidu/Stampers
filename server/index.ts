@@ -48,25 +48,28 @@ async function uploadToCloudinary(dataUri: string): Promise<string> {
 const app = express();
 const PORT = process.env.PORT || 3001;
 
+// Allowed frontend origins (Vercel deploy URL + local dev). FRONTEND_URL is set on Render.
+const allowedOrigins = [
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  process.env.FRONTEND_URL,
+].filter((origin): origin is string => typeof origin === 'string');
+
+const corsOptions = {
+  origin: allowedOrigins,
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  credentials: true,
+};
+
 // CORS configuration
-app.use(
-  cors({
-    origin: ['http://localhost:3000', 'http://127.0.0.1:3000'],
-    methods: ['GET', 'POST', 'PUT', 'DELETE'],
-    credentials: true,
-  })
-);
+app.use(cors(corsOptions));
 
 app.use(express.json({ limit: '10mb' }));
 
 // Create HTTP and Socket.IO Server
 const httpServer = createServer(app);
 const io = new Server(httpServer, {
-  cors: {
-    origin: ['http://localhost:3000', 'http://127.0.0.1:3000'],
-    methods: ['GET', 'POST'],
-    credentials: true,
-  },
+  cors: corsOptions,
 });
 
 // Socket.IO connection event

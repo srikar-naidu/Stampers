@@ -18,6 +18,7 @@ import {
   Database
 } from 'lucide-react';
 import { clsx } from 'clsx';
+import { BACKEND_URL } from '../../lib/config';
 import { Incident } from '../../lib/types/incidents';
 
 interface PredictiveForecast {
@@ -92,7 +93,7 @@ export default function PredictiveIntelligencePage() {
   const [selectedIncident, setSelectedIncident] = useState<string>('user-loc');
 
   useEffect(() => {
-    fetch('http://localhost:3001/api/incidents')
+    fetch(`${BACKEND_URL}/api/incidents`)
       .then(res => res.json())
       .then(data => {
         const active = data.filter((inc: any) => inc.status === 'active' || inc.status === 'monitoring');
@@ -107,7 +108,7 @@ export default function PredictiveIntelligencePage() {
 
     const fetchForecast = (latitude: number, longitude: number) => {
       setIsLoading(true);
-      fetch(`http://localhost:3001/api/predictive/forecast?lat=${latitude}&lng=${longitude}`)
+      fetch(`${BACKEND_URL}/api/predictive/forecast?lat=${latitude}&lng=${longitude}`)
         .then(res => res.json())
         .then(data => setForecast(data))
         .catch(console.error)

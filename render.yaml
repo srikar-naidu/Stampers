@@ -1,0 +1,27 @@
+# AEGIS AI — Backend service (Express + Socket.IO + MongoDB) on Render.
+# Connect this repo to Render and select "Web Service".
+# The frontend (Next.js) is deployed separately to Vercel.
+services:
+  - type: web
+    name: aegis-backend
+    region: oregon
+    plan: free
+    runtime: node
+    buildCommand: npm install
+    startCommand: npm run start:backend
+    healthCheckPath: /api/health
+    # ---------------------------------------------------------------
+    # Required environment variables — set these in the Render
+    # Dashboard -> aegis-backend -> Environment -> Environment Variables:
+    #
+    #   MONGODB_URI            MongoDB Atlas connection string
+    #   CLOUDINARY_CLOUD_NAME  Cloudinary cloud name
+    #   CLOUDINARY_API_KEY     Cloudinary API key
+    #   CLOUDINARY_API_SECRET  Cloudinary API secret
+    #   GROQ_API_KEY           Groq LLM API key
+    #   OPENAI_API_KEY         OpenAI API key
+    #   SENTINEL_CLIENT_ID     Copernicus / Sentinel Hub client id
+    #   SENTINEL_CLIENT_SECRET Copernicus / Sentinel Hub client secret
+    #   FRONTEND_URL           Your Vercel frontend URL
+    #                          (e.g. https://aegis-ai.vercel.app)
+    # ---------------------------------------------------------------

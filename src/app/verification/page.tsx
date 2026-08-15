@@ -22,6 +22,7 @@ import {
   Flag,
 } from 'lucide-react';
 import { clsx } from 'clsx';
+import { BACKEND_URL } from '../../lib/config';
 
 interface VerificationEntry {
   id: string;
@@ -54,8 +55,10 @@ export default function VerificationPage() {
   const [selectedEntry, setSelectedEntry] = useState<VerificationEntry | null>(null);
   const [expandedReport, setExpandedReport] = useState<string | null>(null);
 
+  const verificationQueueUrl = `${BACKEND_URL}/api/reports/verification-queue`;
+
   useEffect(() => {
-    fetch('http://localhost:3001/api/reports/verification-queue')
+    fetch(verificationQueueUrl)
       .then(r => r.json())
       .then(data => {
         if (Array.isArray(data)) setEntries(data);
@@ -65,9 +68,9 @@ export default function VerificationPage() {
 
   useEffect(() => {
     if (!socket) return;
-    
+
     const refreshQueue = () => {
-      fetch('http://localhost:3001/api/reports/verification-queue')
+      fetch(verificationQueueUrl)
         .then(r => r.json())
         .then(data => {
           if (Array.isArray(data)) setEntries(data);

@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { Thermometer, Wind, CloudRain, ShieldAlert } from 'lucide-react';
 import { Incident } from '../../lib/types/incidents';
+import { BACKEND_URL } from '../../lib/config';
 import { LoadingSpinner } from '../shared/LoadingSpinner';
 
 interface WeatherWidgetProps {
@@ -25,7 +26,7 @@ export function WeatherWidget({ incident }: WeatherWidgetProps) {
       try {
         const [lng, lat] = incident.location.coordinates;
         // Query our server API directly for proxying weather (avoiding CORS issues)
-        const response = await axios.get(`http://localhost:3001/api/weather`, {
+        const response = await axios.get(`${BACKEND_URL}/api/weather`, {
           params: { lat, lon: lng },
         });
         setWeather(response.data);

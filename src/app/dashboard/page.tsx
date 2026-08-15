@@ -11,6 +11,7 @@ import { LayerControls } from '../../components/dashboard/LayerControls';
 import { WeatherWidget } from '../../components/dashboard/WeatherWidget';
 import { PulsingDot } from '../../components/shared/PulsingDot';
 import { Incident, Alert, RescueTeam, Shelter } from '../../lib/types/incidents';
+import { BACKEND_URL } from '../../lib/config';
 import {
   Radio,
   Maximize2,
@@ -139,8 +140,8 @@ export default function DashboardPage() {
     const fetchFallback = async () => {
       try {
         const [incRes, alertRes] = await Promise.allSettled([
-          fetch('http://localhost:3001/api/incidents').then((r) => r.json()),
-          fetch('http://localhost:3001/api/alerts').then((r) => r.json()),
+          fetch(`${BACKEND_URL}/api/incidents`).then((r) => r.json()),
+          fetch(`${BACKEND_URL}/api/alerts`).then((r) => r.json()),
         ]);
 
         if (incRes.status === 'fulfilled' && Array.isArray(incRes.value)) {
