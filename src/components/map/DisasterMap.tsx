@@ -1,0 +1,276 @@
+'use client';
+
+import React, { useEffect, useState, useRef } from 'react';
+import { MapContainer, TileLayer, Marker, Popup, Circle, Polyline, useMap } from 'react-leaflet';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
+import { Incident, Shelter, RescueTeam } from '../../lib/types/incidents';
+import { getDisasterConfig } from '../../lib/constants/disaster-types';
+import { Layers, Loader2, Calendar } from 'lucide-react';
+
+interface DisasterMapProps {
+  incidents: Incident[];
+  shelters: Shelter[];
+  rescueTeams: RescueTeam[];
+  selectedIncident: Incident | null;
+  onSelectIncident: (inc: Incident) => void;
+  activeLayers: {
+    incidents: boolean;
+    shelters: boolean;
+    rescueTeams: boolean;
+    dangerZones: boolean;
+    routes: boolean;
+  };
+  evacuationRoutes?: {
+    geometry: number[][];
+    status: 'SAFE' | 'CAUTION' | 'UNSAFE';
+    name: string;
+    rank: number;
+  }[];
+}
+
+// Map Adjuster to programmatically pan/zoom when selected incident changes
+function MapRecenter({ coords }: { coords: [number, number] | null }) {
+  const map = useMap();
+  useEffect(() => {
+    if (coords) {
+      map.setView(coords, 8, { animate: true, duration: 1.5 });
+    }
+  }, [coords, map]);
+  return null;
+}
+
+export default function DisasterMap({
+  incidents,
+  shelters,
+  rescueTeams,
+  selectedIncident,
+  onSelectIncident,
+  activeLayers,
+  evacuationRoutes,
+}: DisasterMapProps) {
+  const [isMounted, setIsMounted] = useState(false);  
+  const mapRef = useRef<L.Map>(null);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  if (!isMounted) {
+    return (
+      <div className="w-full h-full bg-bg-abyss flex items-center justify-center font-mono text-xs text-accent-sage animate-pulse">
+        [INITIALIZING GEOSPATIAL ENGINE...]
+      </div>
+    );
+  }
+
+
+  // Create custom neon div-icons for disasters
+  const createDisasterIcon = (type: string, severity: string) => {
+    const config = getDisasterConfig(type);
+    const colorMap = {
+      critical: '#EF4444',
+      high: '#F97316',
+      medium: '#F59E0B',
+      low: '#10B981',
+    };
+    const color = colorMap[severity as keyof typeof colorMap] || config.hexColor;
+
+    return L.divIcon({
+      html: `
+        <div class="relative flex items-center justify-center w-8 h-8">
+          <div class="absolute w-full h-full rounded-full animate-ping opacity-25" style="background-color: ${color}"></div>
+          <div class="absolute w-5 h-5 rounded-full border border-bg-abyss shadow-md flex items-center justify-center" style="background-color: ${color}">
+            <div class="w-1.5 h-1.5 rounded-full bg-white"></div>
+          </div>
+        </div>
+      `,
+      className: '',
+      iconSize: [32, 32],
+      iconAnchor: [16, 16],
+    });
+  };
+
+  const shelterIcon = L.divIcon({
+    html: `
+      <div class="relative flex items-center justify-center w-8 h-8">
+        <div class="absolute w-5 h-5 rounded border border-bg-abyss shadow-md bg-info-cyan flex items-center justify-center">
+          <span style="font-size: 10px; font-weight: bold; color: #051F20;">H</span>
+        </div>
+      </div>
+    `,
+    className: '',
+    iconSize: [32, 32],
+    iconAnchor: [16, 16],
+  });
+
+  const rescueTeamIcon = L.divIcon({
+    html: `
+      <div class="relative flex items-center justify-center w-8 h-8">
+        <div class="absolute w-5 h-5 rounded-full border border-bg-abyss shadow-md bg-success-green flex items-center justify-center">
+          <span style="font-size: 8px; font-weight: bold; color: #051F20;">R</span>
+        </div>
+      </div>
+    `,
+    className: '',
+    iconSize: [32, 32],
+    iconAnchor: [16, 16],
+  });
+
+  const recenterCoords: [number, number] | null = selectedIncident
+    ? [selectedIncident.location.coordinates[1], selectedIncident.location.coordinates[0]]
+    : null;
+
+  return (
+    <div className="w-full h-full relative">
+
+      <MapContainer
+        center={[20.5937, 78.9629]}
+        zoom={5}
+        zoomControl={false}
+        className="w-full h-full z-10"
+        ref={mapRef}
+      >
+        <MapRecenter coords={recenterCoords} />
+
+        <TileLayer
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+          className="dark-map-tiles"
+        />
+
+
+        {/* Render Disasters/Incidents */}
+        {activeLayers.incidents &&
+          incidents.map((inc) => {
+            const coords: [number, number] = [inc.location.coordinates[1], inc.location.coordinates[0]];
+            const config = getDisasterConfig(inc.type);
+
+            return (
+              <React.Fragment key={inc._id || inc.id}>
+                <Marker
+                  position={coords}
+                  icon={createDisasterIcon(inc.type, inc.severity)}
+                  eventHandlers={{ click: () => onSelectIncident(inc) }}
+                >
+                  <Popup>
+                    <div className="p-1 space-y-1.5 font-mono text-[10px] w-48">
+                      <div className="font-bold uppercase text-accent-mint">{inc.title}</div>
+                      <div className="flex gap-1.5">
+                        <span className="bg-bg-forest px-1 rounded uppercase tracking-wider text-[8px]">
+                          {config.name}
+                        </span>
+                        <span className="bg-bg-forest px-1 rounded uppercase tracking-wider text-[8px]">
+                          {inc.severity}
+                        </span>
+                      </div>
+                      {inc.description && <p className="text-accent-sage/80 leading-normal">{inc.description}</p>}
+                    </div>
+                  </Popup>
+                </Marker>
+
+                {activeLayers.dangerZones && inc.severity === 'critical' && (
+                  <Circle
+                    center={coords}
+                    radius={15000}
+                    pathOptions={{ color: '#EF4444', fillColor: '#EF4444', fillOpacity: 0.1, weight: 1, dashArray: '5, 5' }}
+                  />
+                )}
+                {activeLayers.dangerZones && inc.severity === 'high' && (
+                  <Circle
+                    center={coords}
+                    radius={8000}
+                    pathOptions={{ color: '#F97316', fillColor: '#F97316', fillOpacity: 0.08, weight: 1, dashArray: '5, 5' }}
+                  />
+                )}
+              </React.Fragment>
+            );
+          })}
+
+        {/* Render Shelters */}
+        {activeLayers.shelters &&
+          shelters.map((shelter) => {
+            const coords: [number, number] = [shelter.location.coordinates[1], shelter.location.coordinates[0]];
+            return (
+              <Marker key={shelter._id || shelter.id} position={coords} icon={shelterIcon}>
+                <Popup>
+                  <div className="p-1 space-y-1 font-mono text-[10px] w-44">
+                    <div className="font-bold text-info-cyan uppercase">{shelter.name}</div>
+                    <div className="text-[9px] text-accent-sage/85">{shelter.address}</div>
+                    <div className="text-[9px] border-t border-accent-sage/10 pt-1">
+                      CAPACITY: {shelter.currentOccupancy}/{shelter.capacity}
+                    </div>
+                  </div>
+                </Popup>
+              </Marker>
+            );
+          })}
+
+        {/* Render Rescue Teams */}
+        {activeLayers.rescueTeams &&
+          rescueTeams.map((team) => {
+            const coords: [number, number] = [team.currentLocation.coordinates[1], team.currentLocation.coordinates[0]];
+            return (
+              <Marker key={team._id || team.id} position={coords} icon={rescueTeamIcon}>
+                <Popup>
+                  <div className="p-1 space-y-1 font-mono text-[10px] w-44">
+                    <div className="font-bold text-success-green uppercase">{team.name}</div>
+                    <div className="text-[9px] text-accent-sage/85">STATUS: {team.status.toUpperCase()}</div>
+                    <div className="text-[9px] border-t border-accent-sage/10 pt-1">
+                      MEMBERS: {team.membersCount} // {team.vehicleType}
+                    </div>
+                  </div>
+                </Popup>
+              </Marker>
+            );
+          })}
+
+        {/* Render Evacuation Routes */}
+        {evacuationRoutes && evacuationRoutes.map((route, idx) => {
+          const color = route.status === 'SAFE' ? '#06b6d4' // Using cyan for safer glow
+            : route.status === 'CAUTION' ? '#F59E0B'
+            : '#EF4444';
+          const positions: [number, number][] = route.geometry.map(c => [c[1], c[0]]); // [lng,lat] -> [lat,lng]
+          return (
+            <React.Fragment key={`evac-${idx}`}>
+              {/* Glow Layer (Thick, low opacity) */}
+              <Polyline
+                positions={positions}
+                pathOptions={{
+                  color,
+                  weight: route.rank === 1 ? 16 : 10,
+                  opacity: route.rank === 1 ? 0.4 : 0.25,
+                  lineCap: 'round',
+                  lineJoin: 'round',
+                }}
+              />
+              {/* Core Layer (Thin, high opacity bright center) */}
+              <Polyline
+                positions={positions}
+                pathOptions={{
+                  color: route.rank === 1 ? '#FFFFFF' : color,
+                  weight: route.rank === 1 ? 4 : 2,
+                  opacity: route.rank === 1 ? 1.0 : 0.8,
+                  dashArray: route.rank === 1 ? undefined : '10, 8',
+                  lineCap: 'round',
+                  lineJoin: 'round',
+                }}
+              >
+                <Popup>
+                  <div className="font-mono text-[10px] space-y-1 w-40">
+                    <div className="font-bold text-accent-mint">{route.name}</div>
+                    <div className="text-[9px] text-accent-sage/80">DESTINATION: {route.type}</div>
+                    <div className="text-[9px] border-t border-accent-sage/10 pt-1 mt-1">
+                      DISTANCE: {route.routeDistance}<br/>
+                      ETA: {route.eta}
+                    </div>
+                  </div>
+                </Popup>
+              </Polyline>
+            </React.Fragment>
+          );
+        })}
+      </MapContainer>
+    </div>
+  );
+}
